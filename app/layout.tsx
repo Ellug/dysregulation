@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { UsersProvider } from "@/contexts/UsersContext"
 import { RouteGuard } from "@/components/RouteGuard";
+import { NewMessageProvider } from "@/contexts/NewMessageContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,9 @@ export default function RootLayout({
       >
         <AuthProvider>
           <UsersProvider>
-            <RouteGuard>{children}</RouteGuard>
+            <NewMessageProvider>
+              <RouteGuard>{children}</RouteGuard>
+            </NewMessageProvider>
           </UsersProvider>
         </AuthProvider>
       </body>

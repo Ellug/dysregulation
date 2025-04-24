@@ -46,7 +46,7 @@ export default function FakeSheet() {
     console.log("이펙트 실행됨");
   
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === "1") {
+      if (e.key === "`") {
         scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
       }
     };

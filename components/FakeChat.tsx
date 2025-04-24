@@ -1,14 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  ChatMessage,
-  fetchInitialMessages,
-  sendMessage,
-  subscribeToMessages,
-} from "@/lib/chat";
+import { ChatMessage, fetchInitialMessages, fetchMoreMessages, sendMessage, subscribeToMessages, } from "@/lib/chat";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUsers } from "@/contexts/UsersContext";
+import { useNewMessage } from "@/contexts/NewMessageContext";
 import { Timestamp } from "firebase/firestore";
 
 interface DisplayMessage extends Omit<ChatMessage, "createdAt"> {
@@ -25,12 +21,14 @@ export default function FakeChat() {
 
   const [message, setMessage] = useState("");
   const [chats, setChats] = useState<DisplayMessage[]>([]);
-  const isMobile = typeof window !== "undefined" && /Mobi|Android/i.test(navigator.userAgent);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [lastVisible, setLastVisible] = useState<any | null>(null);
+  const { setHasNewMessage } = useNewMessage();
 
   useEffect(() => {
     if (!user) return;
   
-    fetchInitialMessages().then(({ messages }) => {
+    fetchInitialMessages().then(({ messages, lastVisible }) => {
       const formatted: DisplayMessage[] = messages.reverse().map((msg) => {
         const isMine = msg.uid === user.uid;
         return {
@@ -38,30 +36,69 @@ export default function FakeChat() {
           uid: msg.uid,
           text: msg.text,
           createdAt: msg.createdAt,
-          from: isMine ? "me" : "other", // <-- string literal로 인식되게
+          from: isMine ? "me" : "other",
           name: isMine ? undefined : getUserName(msg.uid),
         };
       });
       setChats(formatted);
+      setLastVisible(lastVisible);
       scrollToBottom();
     });
   
     const unsub = subscribeToMessages((msg) => {
       if (!user || msg.uid === user.uid) return;
-      const newMsg: DisplayMessage = {
+    
+      const updatedMsg: DisplayMessage = {
         id: msg.id,
         uid: msg.uid,
         text: msg.text,
         createdAt: msg.createdAt,
-        from: "other", // <-- string literal로 명시
+        from: "other",
         name: getUserName(msg.uid),
       };
-      setChats((prev) => [...prev, newMsg]);
-    });
+    
+      const isAtBottom =
+        scrollRef.current &&
+        scrollRef.current.scrollHeight - scrollRef.current.scrollTop <=
+          scrollRef.current.clientHeight + 10;
+    
+      setChats((prev) => {
+        const exists = prev.some((c) => c.id === msg.id);
+        if (exists) {
+          return prev.map((c) => (c.id === msg.id ? updatedMsg : c));
+        } else {
+          return [...prev, updatedMsg];
+        }
+      });
+    
+      // ✅ 이건 별도로 처리해야 함
+      if (isAtBottom) {
+        scrollToBottom();
+        setHasNewMessage(false);
+      } else {
+        setHasNewMessage(true);
+      }
+    });    
   
     return () => unsub();
-  }, [user, getUserName]);
+  }, [user, getUserName, setHasNewMessage]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!scrollRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      const isAtBottom = scrollHeight - scrollTop <= clientHeight + 10;
+      if (isAtBottom) {
+        setHasNewMessage(false);
+      }
+    };
   
+    const target = scrollRef.current;
+    if (target) target.addEventListener("scroll", handleScroll);
+    return () => {
+      if (target) target.removeEventListener("scroll", handleScroll);
+    };
+  }, [setHasNewMessage]);  
 
   const handleSend = async () => {
     if (!message.trim() || !user) return;
@@ -86,9 +123,38 @@ export default function FakeChat() {
     }, 100);
   };
 
+  const handleLoadMore = async () => {
+    if (!lastVisible) return;
+  
+    const { messages, lastVisible: newLast } = await fetchMoreMessages(lastVisible);
+    const formatted: DisplayMessage[] = messages.reverse().map((msg) => ({
+      id: msg.id,
+      uid: msg.uid,
+      text: msg.text,
+      createdAt: msg.createdAt,
+      from: msg.uid === user?.uid ? "me" : "other",
+      name: msg.uid === user?.uid ? undefined : getUserName(msg.uid),
+    }));
+  
+    setChats((prev) => [...formatted, ...prev]); // 앞에 붙이기
+    setLastVisible(newLast);
+  };
+  
+
   return (
     <div className="flex flex-col h-[600px] border-t border-gray-300">
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        {lastVisible && (
+          <div className="sticky top-0 left-12 w-40 z-20 bg-gray-50 py-1 text-center border-b border-gray-200">
+            <button
+              onClick={handleLoadMore}
+              className="text-sm text-gray-600 hover:underline"
+            >
+              Load Before
+            </button>
+          </div>
+        )}
+
         {chats.map((chat, rowIdx) => (
           <div key={chat.id} className="flex border-b border-gray-200">
             <div className="w-[48px] shrink-0 sticky left-0 z-10 text-xs text-center border-r border-gray-300 bg-gray-100 py-1">
@@ -101,7 +167,7 @@ export default function FakeChat() {
                   return (
                     <div
                       key={colIdx}
-                      className="w-[500px] min-h-[24px] border-r border-gray-200 px-2 py-1 text-[13px] text-blue-800 break-words whitespace-pre-wrap flex items-center justify-end"
+                      className="w-[500px] min-h-[24px] border-r border-gray-200 px-2 py-1 text-[13px] text-blue-900 break-words whitespace-pre-wrap flex items-center justify-end"
                     >
                       {chat.text}
                     </div>
@@ -153,7 +219,7 @@ export default function FakeChat() {
                   placeholder="메시지를 입력하세요"
                   className="w-full h-full px-2 text-[13px] outline-none resize-none bg-white"
                   onKeyDown={(e) => {
-                    if (!isMobile && e.key === "Enter" && !e.shiftKey) {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSend();
                     }

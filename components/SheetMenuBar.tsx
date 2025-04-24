@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
+import StarIcon from "@mui/icons-material/Star"
 import AddToDrive from "@mui/icons-material/AddToDrive";
 import CloudDoneOutlined from "@mui/icons-material/CloudDoneOutlined";
 import History from "@mui/icons-material/History";
@@ -10,12 +11,14 @@ import Videocam from "@mui/icons-material/VideocamOutlined";
 import Public from "@mui/icons-material/Public";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { useNewMessage } from "@/contexts/NewMessageContext";
 
 export default function SheetMenuBar({ saveSheet }: { saveSheet: () => void }) {
   const menus = ["파일", "수정", "보기", "삽입", "서식", "데이터", "도구", "확장 프로그램", "도움말"];
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("무제 시트");
   const { user } = useAuth();
+  const { hasNewMessage } = useNewMessage();
   const router = useRouter();
 
   return (
@@ -46,7 +49,11 @@ export default function SheetMenuBar({ saveSheet }: { saveSheet: () => void }) {
 
             {/* 즐겨찾기/드라이브/클라우드 */}
             <div className="flex gap-3 text-lg text-gray-600">
-              <StarOutlineIcon fontSize="inherit" />
+              {hasNewMessage ? (
+                <StarIcon fontSize="inherit" className="text-yellow-500" />
+              ) : (
+                <StarOutlineIcon fontSize="inherit" />
+              )}
               <AddToDrive fontSize="inherit" />
               <CloudDoneOutlined fontSize="inherit" />
             </div>

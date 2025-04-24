@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { createContext, useContext, useEffect, useState, ReactNode, } from "react";
+import { collection, onSnapshot, DocumentData, } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export interface UserInfo {
@@ -22,27 +22,34 @@ const UsersContext = createContext<UsersContextType>({
   getUserPicture: () => undefined,
 });
 
-export function UsersProvider({ children }: { children: React.ReactNode }) {
+export function UsersProvider({ children }: { children: ReactNode }) {
   const [usersMap, setUsersMap] = useState<Record<string, UserInfo>>({});
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const snapshot = await getDocs(collection(db, "users"));
-      const map: Record<string, UserInfo> = {};
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      setUsersMap((prev) => {
+        const updated = { ...prev };
+        snapshot.docChanges().forEach((change) => {
+          const data = change.doc.data() as DocumentData;
+          const uid = change.doc.id;
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        map[doc.id] = {
-          uid: doc.id,
-          name: data.name || "이름 없음",
-          picture: data.picture || "",
-        };
+          if (change.type === "added" || change.type === "modified") {
+            updated[uid] = {
+              uid,
+              name: data.name || "이름 없음",
+              picture: data.picture || "",
+            };
+          }
+
+          if (change.type === "removed") {
+            delete updated[uid];
+          }
+        });
+        return updated;
       });
+    });
 
-      setUsersMap(map);
-    };
-
-    fetchUsers();
+    return () => unsubscribe();
   }, []);
 
   const getUserName = (uid: string) => usersMap[uid]?.name || "알 수 없음";

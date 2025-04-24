@@ -26,9 +26,10 @@ export async function fetchInitialMessages(limitCount = 20) {
   return { messages, lastVisible: last };
 }
 
-export async function fetchMoreMessages(lastVisible: Timestamp, limitCount = 20) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function fetchMoreMessages(lastVisibleDoc: any, limitCount = 20) {
   const ref = collection(db, "prototype");
-  const q = query(ref, orderBy("createdAt", "desc"), startAfter(lastVisible), limit(limitCount));
+  const q = query(ref, orderBy("createdAt", "desc"), startAfter(lastVisibleDoc), limit(limitCount));
   const snapshot = await getDocs(q);
   const messages: ChatMessage[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage));
   const last = snapshot.docs[snapshot.docs.length - 1];

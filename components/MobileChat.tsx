@@ -1,0 +1,203 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { ChatMessage, fetchInitialMessages, fetchMoreMessages, sendMessage, subscribeToMessages } from "@/lib/chat";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUsers } from "@/contexts/UsersContext";
+import { useNewMessage } from "@/contexts/NewMessageContext";
+import { Timestamp } from "firebase/firestore";
+import { useRouter } from "next/navigation";
+
+interface DisplayMessage extends Omit<ChatMessage, "createdAt"> {
+  from: "me" | "other";
+  name?: string;
+  photoURL?: string;
+  createdAt: Timestamp;
+}
+
+export default function MobileChat() {
+  const { user } = useAuth();
+  const { getUserName, getUserPicture } = useUsers();
+  const { setHasNewMessage } = useNewMessage();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const [message, setMessage] = useState("");
+  const [chats, setChats] = useState<DisplayMessage[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [lastVisible, setLastVisible] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    fetchInitialMessages().then(({ messages, lastVisible }) => {
+      const formatted: DisplayMessage[] = messages.reverse().map((msg) => {
+        const isMine = msg.uid === user.uid;
+        return {
+          ...msg,
+          from: isMine ? "me" : "other",
+          name: isMine ? undefined : getUserName(msg.uid),
+          photoURL: isMine ? user.picture : getUserPicture?.(msg.uid),
+        };
+      });
+      setChats(formatted);
+      setLastVisible(lastVisible);
+      scrollToBottom();
+    });
+
+    const unsub = subscribeToMessages((msg) => {
+      if (!user || msg.uid === user.uid) return;
+
+      const newMsg: DisplayMessage = {
+        ...msg,
+        from: "other",
+        name: getUserName(msg.uid),
+        photoURL: getUserPicture?.(msg.uid),
+      };
+
+      const isAtBottom = scrollRef.current &&
+        scrollRef.current.scrollHeight - scrollRef.current.scrollTop <= scrollRef.current.clientHeight + 10;
+
+      setChats((prev) => {
+        const exists = prev.some((c) => c.id === msg.id);
+        if (exists) return prev;
+        return [...prev, newMsg];
+      });
+
+      if (isAtBottom) {
+        scrollToBottom();
+        setHasNewMessage(false);
+      } else {
+        setHasNewMessage(true);
+      }
+    });
+
+    return () => unsub();
+  }, [user, getUserName, getUserPicture, setHasNewMessage]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!scrollRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      if (scrollHeight - scrollTop <= clientHeight + 10) {
+        setHasNewMessage(false);
+      }
+    };
+    const el = scrollRef.current;
+    el?.addEventListener("scroll", handleScroll);
+    return () => el?.removeEventListener("scroll", handleScroll);
+  }, [setHasNewMessage]);
+
+  const handleSend = async () => {
+    if (!message.trim() || !user) return;
+    const newMessage: DisplayMessage = {
+      id: crypto.randomUUID(),
+      uid: user.uid,
+      text: message,
+      createdAt: Timestamp.now(),
+      from: "me",
+      photoURL: user.picture,
+    };
+    setChats((prev) => [...prev, newMessage]);
+    await sendMessage(user.uid, message);
+    setMessage("");
+    scrollToBottom();
+  };
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }, 100);
+  };
+
+  const handleLoadMore = async () => {
+    if (!lastVisible) return;
+  
+    const { messages, lastVisible: newLast } = await fetchMoreMessages(lastVisible);
+    const formatted: DisplayMessage[] = messages.reverse().map((msg) => ({
+      ...msg,
+      from: msg.uid === user?.uid ? "me" : "other",
+      name: msg.uid === user?.uid ? undefined : getUserName(msg.uid),
+      photoURL: msg.uid === user?.uid ? user?.picture : getUserPicture?.(msg.uid),
+    }));
+  
+    setChats((prev) => [...formatted, ...prev]);
+    setLastVisible(newLast);
+  };
+  
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-500">
+      {/* ✅ 헤더 */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm border-b">
+        <div className="text-sm font-semibold text-gray-800 text-center w-full">
+          dysrequlation
+        </div>
+        {user && (
+          <div
+            onClick={() => router.push("/mypage")}
+            className="absolute right-4 w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-white text-xs font-semibold cursor-pointer"
+          >
+            {user.picture && user.picture.trim() !== "" ? (
+              <img src={user.picture} alt="profile" className="w-full h-full object-cover" />
+            ) : (
+              user.name?.[0]?.toUpperCase() || "U"
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 메시지 영역 */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
+
+        {lastVisible && (
+          <div className="w-full flex justify-center py-2">
+            <button
+              onClick={handleLoadMore}
+              className="px-4 py-1.5 bg-white text-blue-600 text-sm font-medium rounded-full shadow hover:bg-blue-50 hover:text-blue-700 transition duration-200"
+            >
+              이전 메시지 더 보기
+            </button>
+          </div>
+        )}
+
+        {chats.map((chat) => {
+          const time = chat.createdAt.toDate().toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          return (
+            <div key={chat.id} className={`flex ${chat.from === "me" ? "justify-end" : "justify-start"}`}>
+              {chat.from === "other" && (
+                <img alt='what' src={chat.photoURL || "/default-profile.png"} className="w-8 h-8 rounded-full mr-2" />
+              )}
+              <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm shadow 
+                ${chat.from === "me" ? "bg-yellow-200 text-gray-800 rounded-br-none" : "bg-gray-200 text-gray-800 rounded-bl-none"}`}>
+                <div>{chat.text}</div>
+                <div className="text-[10px] text-right mt-1 opacity-60">{time}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 입력창 */}
+      <div className="flex items-center p-3 border-t bg-white">
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="메시지를 입력하세요"
+          className="flex-1 resize-none border rounded-lg px-3 py-2 text-sm outline-none max-h-[100px]"
+          rows={1}
+        />
+        <button
+          onClick={handleSend}
+          className="ml-2 px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition"
+        >
+          전송
+        </button>
+      </div>
+    </div>
+  );
+}
