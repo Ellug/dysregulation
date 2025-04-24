@@ -46,7 +46,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex h-screen items-center justify-center bg-gradient-to-br from-zinc-900 via-black to-zinc-950 px-4">
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl p-8">
+      <div className="relative w-full max-w-md overflow-visible rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl p-8">
         <h1 className="text-center text-3xl font-bold text-white mb-6">
           {isLogin ? "로그인" : "회원가입"}
         </h1>
@@ -74,6 +74,7 @@ export default function LoginPage() {
           </button>
         </div>
 
+        {/* 슬라이드 전환 영역 */}
         <div className="relative w-full overflow-hidden h-auto">
           <div
             className="flex w-[200%] transition-transform duration-500 ease-in-out"
@@ -82,18 +83,18 @@ export default function LoginPage() {
             }}
           >
             {/* Login Form */}
-            <form className="w-full space-y-4 pr-4" onSubmit={handleSubmit}>
+            <form className="w-full space-y-4 px-2 py-2" onSubmit={handleSubmit}>
               <input
                 type="email"
                 placeholder="이메일"
-                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
               <input
                 type="password"
                 placeholder="비밀번호"
-                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -120,25 +121,25 @@ export default function LoginPage() {
             </form>
 
             {/* Signup Form */}
-            <form className="w-full space-y-4 pl-4" onSubmit={handleSubmit}>
+            <form className="w-full space-y-4 px-2 py-2" onSubmit={handleSubmit}>
               <input
                 type="email"
                 placeholder="이메일"
-                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
               <input
                 type="password"
                 placeholder="비밀번호"
-                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
               <input
                 type="password"
                 placeholder="비밀번호 확인"
-                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
               />

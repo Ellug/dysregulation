@@ -145,7 +145,7 @@ export default function FakeChat() {
     <div className="flex flex-col h-[600px] border-t border-gray-300">
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {lastVisible && (
-          <div className="sticky top-0 left-12 w-40 z-20 bg-gray-50 py-1 text-center border-b border-gray-200">
+          <div className="sticky top-0 left-12 w-40 z-20 py-1 text-center">
             <button
               onClick={handleLoadMore}
               className="text-sm text-gray-600 hover:underline"

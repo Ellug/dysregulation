@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useNewMessage } from "@/contexts/NewMessageContext";
 
-export default function SheetMenuBar({ saveSheet }: { saveSheet: () => void }) {
+export default function SheetMenuBar({ saveSheet, exportSheet }: { saveSheet: () => void; exportSheet: () => void }) {
   const menus = ["파일", "수정", "보기", "삽입", "서식", "데이터", "도구", "확장 프로그램", "도움말"];
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("무제 시트");
@@ -87,7 +87,8 @@ export default function SheetMenuBar({ saveSheet }: { saveSheet: () => void }) {
         </div>
 
         {/* 공유 버튼 */}
-        <button className="flex items-center gap-1 bg-blue-300 hover:bg-blue-200 text-gray-700 text-sm font-medium px-6 py-2.5 rounded-full">
+        <button className="flex items-center gap-1 bg-blue-300 hover:bg-blue-200 text-gray-700 text-sm font-medium px-6 py-2.5 rounded-full"
+          onClick={exportSheet}>
           <Public fontSize="small" className="text-gray-700" />
           공유
         </button>

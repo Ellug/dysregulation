@@ -8,6 +8,8 @@ import { useNewMessage } from "@/contexts/NewMessageContext";
 import { Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
+import SendIcon from "@mui/icons-material/Send"; 
+
 interface DisplayMessage extends Omit<ChatMessage, "createdAt"> {
   from: "me" | "other";
   name?: string;
@@ -161,25 +163,44 @@ export default function MobileChat() {
           </div>
         )}
 
-        {chats.map((chat) => {
+        {chats.map((chat, index) => {
+          const prevChat = chats[index - 1];
+          const isSameUserAsPrev = prevChat?.uid === chat.uid;
+          const isOther = chat.from === "other";
+
           const time = chat.createdAt.toDate().toLocaleTimeString("ko-KR", {
             hour: "2-digit",
             minute: "2-digit",
           });
 
           return (
-            <div key={chat.id} className={`flex ${chat.from === "me" ? "justify-end" : "justify-start"}`}>
-              {chat.from === "other" && (
-                <img alt='what' src={chat.photoURL || "/default-profile.png"} className="w-8 h-8 rounded-full mr-2" />
+            <div key={chat.id} className={`flex flex-col ${isOther ? "items-start" : "items-end"}`}>
+              {/* 프로필 + 이름은 첫 메시지에만 출력 */}
+              {isOther && !isSameUserAsPrev && (
+                <div className="flex items-center gap-2 mb-1">
+                  <img
+                    src={chat.photoURL || "/default-profile.png"}
+                    alt="profile"
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <div className="text-[13px] text-gray-200 font-medium">{chat.name}</div>
+                </div>
               )}
-              <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm shadow 
-                ${chat.from === "me" ? "bg-yellow-200 text-gray-800 rounded-br-none" : "bg-gray-200 text-gray-800 rounded-bl-none"}`}>
+
+              {/* 말풍선 */}
+              <div
+                className={`
+                  max-w-[70%] px-3 py-2 rounded-xl text-sm shadow 
+                  ${isOther ? "bg-gray-200 text-gray-800 rounded-tl-none ml-10" : "bg-yellow-200 text-gray-800 rounded-tr-none"}
+                `}
+              >
                 <div>{chat.text}</div>
                 <div className="text-[10px] text-right mt-1 opacity-60">{time}</div>
               </div>
             </div>
           );
         })}
+
       </div>
 
       {/* 입력창 */}
@@ -193,9 +214,9 @@ export default function MobileChat() {
         />
         <button
           onClick={handleSend}
-          className="ml-2 px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition"
+          className="ml-2 px-2 py-2 bg-gradient-to-r from-purple-400 to-indigo-500 text-white text-sm rounded-lg hover:opacity-90 transition"
         >
-          전송
+          <SendIcon fontSize="small" />
         </button>
       </div>
     </div>
