@@ -47,17 +47,19 @@ export default function MobileChat() {
 
   // 새로고침 방지
   useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+  
     const handleTouchMove = (e: TouchEvent) => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-      if (scrollY === 0 && e.touches[0].clientY > 0) {
+      if (el.scrollTop === 0 && e.touches[0].clientY > 0) {
         e.preventDefault();
       }
     };
-
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-
+  
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+  
     return () => {
-      document.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchmove", handleTouchMove);
     };
   }, []);
 
