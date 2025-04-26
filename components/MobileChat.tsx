@@ -9,6 +9,7 @@ import { Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 import SendIcon from "@mui/icons-material/Send"; 
+import { requestPermissionAndGetToken } from "@/lib/firebase-messaging";
 
 interface DisplayMessage extends Omit<ChatMessage, "createdAt"> {
   from: "me" | "other";
@@ -43,6 +44,10 @@ export default function MobileChat() {
           });
       });
     }
+  }, []);
+
+  useEffect(() => {
+    requestPermissionAndGetToken();
   }, []);
 
   // 새로고침 방지
