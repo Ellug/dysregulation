@@ -21,7 +21,7 @@ messaging.onBackgroundMessage(function(payload) {
   const notificationTitle = payload.notification?.title || '새 메시지';
   const notificationOptions = {
     body: payload.notification?.body || '새로운 채팅이 도착했습니다.',
-    icon: 'google-sheets', // 원하는 아이콘 경로
+    icon: 'google-sheets.png',
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
