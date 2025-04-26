@@ -3,12 +3,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging-comp
 
 // Firebase 초기화 (당신 프로젝트 firebaseConfig에 맞게 수정)
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyDN_PhkNtHLI6S5ZiNc4WXXILFHxHklwsE",
+  authDomain: "dysregulation-42fdd.firebaseapp.com",
+  projectId: "dysregulation-42fdd",
+  storageBucket: "dysregulation-42fdd.firebasestorage.app",
+  messagingSenderId: "160656772306",
+  appId: "1:160656772306:web:50eec5638d2252b23ef10b",
 });
 
 // Firebase Messaging 인스턴스 가져오기
