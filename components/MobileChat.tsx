@@ -29,6 +29,38 @@ export default function MobileChat() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [lastVisible, setLastVisible] = useState<any | null>(null);
 
+  // service worker 등록
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/firebase-messaging-sw.js")
+          .then((registration) => {
+            console.log("Service Worker 등록 성공:", registration.scope);
+          })
+          .catch((err) => {
+            console.error("Service Worker 등록 실패:", err);
+          });
+      });
+    }
+  }, []);
+
+  // 새로고침 방지
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent) => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      if (scrollY === 0 && e.touches[0].clientY > 0) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, []);
+
   useEffect(() => {
     if (!user) return;
 
@@ -129,10 +161,10 @@ export default function MobileChat() {
   
 
   return (
-    <div className="flex flex-col h-screen bg-gray-500">
+    <div className="flex flex-col h-screen bg-gradient-to-b from-gray-900 via-gray-950 to-black">
       {/* ✅ 헤더 */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm border-b">
-        <div className="text-sm font-semibold text-gray-800 text-center w-full">
+      <div className="flex items-center justify-between px-4 py-3 bg-black shadow-sm border-b">
+        <div className="text-sm font-semibold text-gray-100 text-center w-full">
           dysrequlation
         </div>
         {user && (
@@ -156,7 +188,7 @@ export default function MobileChat() {
           <div className="w-full flex justify-center py-2">
             <button
               onClick={handleLoadMore}
-              className="px-4 py-1.5 bg-white text-blue-600 text-sm font-medium rounded-full shadow hover:bg-blue-50 hover:text-blue-700 transition duration-200"
+              className="px-4 py-1.5 bg-blue-600 text-gray-100 text-sm font-medium rounded-full shadow hover:bg-blue-50 hover:text-blue-700 transition duration-200"
             >
               이전 메시지 더 보기
             </button>
@@ -168,6 +200,20 @@ export default function MobileChat() {
           const isSameUserAsPrev = prevChat?.uid === chat.uid;
           const isOther = chat.from === "other";
 
+          const currentDate = chat.createdAt.toDate().toLocaleDateString("ko-KR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        
+          const prevDate = prevChat?.createdAt.toDate().toLocaleDateString("ko-KR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        
+          const isNewDate = currentDate !== prevDate;
+
           const time = chat.createdAt.toDate().toLocaleTimeString("ko-KR", {
             hour: "2-digit",
             minute: "2-digit",
@@ -175,9 +221,19 @@ export default function MobileChat() {
 
           return (
             <div key={chat.id} className={`flex flex-col ${isOther ? "items-start" : "items-end"}`}>
+
+              {/* 날짜 구분선 */}
+              {isNewDate && (
+                <div className="flex items-center gap-3 my-6 w-full">
+                  <div className="flex-grow border-t border-dashed border-gray-500"></div>
+                  <span className="text-xs text-white whitespace-nowrap">{currentDate}</span>
+                  <div className="flex-grow border-t border-dashed border-gray-500"></div>
+                </div>
+              )}
+
               {/* 프로필 + 이름은 첫 메시지에만 출력 */}
               {isOther && !isSameUserAsPrev && (
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2">
                   <img
                     src={chat.photoURL || "/default-profile.png"}
                     alt="profile"
@@ -190,12 +246,12 @@ export default function MobileChat() {
               {/* 말풍선 */}
               <div
                 className={`
-                  max-w-[70%] px-3 py-2 rounded-xl text-sm shadow 
+                  max-w-[70%] px-3 py-2 rounded-xl text-sm shadow whitespace-pre-wrap
                   ${isOther ? "bg-gray-200 text-gray-800 rounded-tl-none ml-10" : "bg-yellow-200 text-gray-800 rounded-tr-none"}
                 `}
               >
                 <div>{chat.text}</div>
-                <div className="text-[10px] text-right mt-1 opacity-60">{time}</div>
+                <div className="text-[10px] text-right mt-1 opacity-80">{time}</div>
               </div>
             </div>
           );
@@ -204,21 +260,23 @@ export default function MobileChat() {
       </div>
 
       {/* 입력창 */}
-      <div className="flex items-center p-3 border-t bg-white">
+      <div className="flex items-center p-3 border-t border-gray-700 bg-black">
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="메시지를 입력하세요"
-          className="flex-1 resize-none border rounded-lg px-3 py-2 text-sm outline-none max-h-[100px]"
+          className="flex-1 resize-none border border-gray-600 rounded-lg bg-black px-3 py-2 text-sm text-white placeholder-gray-400 outline-none max-h-[100px]"
           rows={1}
         />
         <button
+          onTouchStart={(e) => e.preventDefault()}
           onClick={handleSend}
           className="ml-2 px-2 py-2 bg-gradient-to-r from-purple-400 to-indigo-500 text-white text-sm rounded-lg hover:opacity-90 transition"
         >
           <SendIcon fontSize="small" />
         </button>
       </div>
+
     </div>
   );
 }

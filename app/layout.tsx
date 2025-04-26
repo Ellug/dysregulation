@@ -19,6 +19,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Google Sheet",
   description: "dysregulation",
+  manifest: "/manifest.json",
+  themeColor: "#000000",  
 };
 
 export default function RootLayout({
