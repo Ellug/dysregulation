@@ -50,18 +50,31 @@ export default function MobileChat() {
     const el = scrollRef.current;
     if (!el) return;
   
-    const handleTouchMove = (e: TouchEvent) => {
-      if (el.scrollTop === 0 && e.touches[0].clientY > 0) {
-        e.preventDefault();
-      }
+    let startY = 0;
+  
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
     };
   
+    const handleTouchMove = (e: TouchEvent) => {
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - startY;
+  
+      if (el.scrollTop === 0 && deltaY > 0) {
+        // 최상단에서 손가락을 아래로 당기는 경우만 막는다
+        e.preventDefault();
+      }
+      // 그 외에는 스크롤 허용
+    };
+  
+    el.addEventListener("touchstart", handleTouchStart, { passive: true });
     el.addEventListener("touchmove", handleTouchMove, { passive: false });
   
     return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
       el.removeEventListener("touchmove", handleTouchMove);
     };
-  }, []);
+  }, []);  
 
   useEffect(() => {
     if (!user) return;
